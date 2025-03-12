@@ -74,6 +74,12 @@ namespace WebXR
       remove => WebXRSubsystem.OnViewerHitTestUpdate -= value;
     }
 
+	public static event WebXRSubsystem.CameraFrameReceived OnCameraFrameReceived
+	{
+	  add => WebXRSubsystem.OnCameraFrameReceived += value;
+	  remove => WebXRSubsystem.OnCameraFrameReceived -= value;
+	}
+
     public bool isSupportedAR
     {
       get
@@ -132,6 +138,10 @@ namespace WebXR
     {
       subsystem?.StopViewerHitTest();
     }
+
+	public void RequestCameraFrame(){
+		subsystem?.RequestCameraFrame();
+	}
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void TryAutoLoad()

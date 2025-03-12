@@ -389,14 +389,75 @@ void main()
         var onUnityLoaded = this.unityLoaded.bind(this);
         var onToggleHitTest = this.toggleHitTest.bind(this);
         var onCallHapticPulse = this.hapticPulse.bind(this);
+		var onRequestCameraFrame = this.requestCameraFrame.bind(this);
 
         Module.WebXR.onUnityLoaded = onUnityLoaded;
         Module.WebXR.toggleAR = onToggleAr;
         Module.WebXR.toggleVR = onToggleVr;
         Module.WebXR.toggleHitTest = onToggleHitTest;
         Module.WebXR.callHapticPulse = onCallHapticPulse;
+		Module.WebXR.requestCameraFrame = onRequestCameraFrame;
       }
-    
+	
+
+	  async function accessRawCameraTexture(xrSession, referenceSpace) {
+		// Get the canvas element by type (assumes it already exists in the DOM)
+		const canvas = document.querySelector("canvas");
+		if (!canvas) {
+			console.error("Canvas element not found.");
+			return;
+		}
+	
+		// Get the WebGL rendering context from the canvas
+		const gl = canvas.getContext("webgl2", { xrCompatible: true });
+	
+		// Create the XRWebGLBinding instance
+		const xrWebGLBinding = new XRWebGLBinding(xrSession, gl);
+	
+		// Set up the base layer for the XRSession
+		xrSession.updateRenderState({
+			baseLayer: new XRWebGLLayer(xrSession, gl),
+		});
+	
+		xrSession.requestAnimationFrame((time, xrFrame) => {
+			const pose = xrFrame.getViewerPose(referenceSpace);
+	
+			if (pose) {
+				for (const view of pose.views) {
+					const camera = view.camera;
+	
+					if (camera) {
+						// Retrieve the raw camera texture
+						const cameraTexture = xrWebGLBinding.getCameraImage(camera);
+						if (cameraTexture) {
+							console.log("Camera texture obtained:", cameraTexture);
+	
+							// Use the texture for rendering or other purposes
+							gl.bindTexture(gl.TEXTURE_2D, cameraTexture);
+							gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cameraTexture);
+							gl.generateMipmap(gl.TEXTURE_2D);
+							
+							// Perform rendering or processing with the texture here
+						} else {
+							console.warn("No camera texture available for this view.");
+						}
+					} else {
+						console.warn("No camera object available for this view.");
+					}
+				}
+			} else {
+				console.warn("No viewer pose available.");
+			}
+		});
+	}
+
+	  XRManager.prototype.requestCameraFrame = function () {
+		console.log("Requesting camera frame");
+		if (this.xrSession && this.xrSession.isInSession && this.xrSession.isAR) {
+			//TODO
+		}
+	  }
+
       XRManager.prototype.onRequestARSession = function () {
         if (!this.isARSupported) return;
         if (this.BrowserObject.pauseAsyncCallbacks) {

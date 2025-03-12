@@ -56,6 +56,11 @@ var LibraryWebXR = {
   PreRenderSpectatorCamera: function() {
     Module.WebXR.startRenderSpectatorCamera();
   },
+
+  RequestCameraFrame: function() {
+	console.log("Requesting camera frame in jslib");
+	Module.WebXR.requestCameraFrame();
+  }
 }
 
 mergeInto(LibraryManager.library, LibraryWebXR);

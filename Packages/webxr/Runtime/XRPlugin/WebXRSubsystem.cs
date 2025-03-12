@@ -281,6 +281,9 @@ namespace WebXR
       [DllImport("__Internal")]
       public static extern void ToggleViewerHitTest();
 
+	  [DllImport("__Internal")]
+	  public static extern void RequestCameraFrame();
+
       [DllImport("__Internal")]
       public static extern void ControllerPulse(int controller, float intensity, float duration);
 
@@ -339,6 +342,10 @@ namespace WebXR
     public delegate void HitTestUpdate(WebXRHitPoseData hitPoseData);
 
     internal static event HitTestUpdate OnViewerHitTestUpdate;
+
+	public delegate void CameraFrameReceived(Texture2D webcamData);
+
+	internal static event CameraFrameReceived OnCameraFrameReceived;
 
     internal delegate void StartXREvent(int viewsCount,
         float left_x, float left_y, float left_w, float left_h,
@@ -513,6 +520,14 @@ namespace WebXR
       }
 #endif
     }
+	public void RequestCameraFrame(){
+#if UNITY_WEBGL
+      if (xrState == WebXRState.AR)
+      {
+        Native.RequestCameraFrame();
+      }
+#endif
+	}
 
     public void HapticPulse(WebXRControllerHand hand, float intensity, float duration)
     {
