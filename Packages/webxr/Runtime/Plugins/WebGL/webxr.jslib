@@ -58,7 +58,6 @@ var LibraryWebXR = {
   },
 
   RequestCameraFrame: function() {
-	console.log("Requesting camera frame in jslib");
 	Module.WebXR.requestCameraFrame();
   }
 }

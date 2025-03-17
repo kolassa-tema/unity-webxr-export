@@ -431,13 +431,50 @@ void main()
 						const cameraTexture = xrWebGLBinding.getCameraImage(camera);
 						if (cameraTexture) {
 							console.log("Camera texture obtained:", cameraTexture);
+              
 	
-							// Use the texture for rendering or other purposes
-							gl.bindTexture(gl.TEXTURE_2D, cameraTexture);
-							gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cameraTexture);
-							gl.generateMipmap(gl.TEXTURE_2D);
+							const canvas = document.createElement('canvas');
+							const width = camera.width; 
+							const height = camera.height; 
+
+              const fb = gl.createFramebuffer();
+              gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+              gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, cameraTexture, 0);
+
+              if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
+                  const pixels = new Uint8Array(width * height * 4);
+                  gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+                  
+                  //Create a temporary 2D canvas
+                  const outputCanvas = document.createElement('canvas');
+                  outputCanvas.width = width;
+                  outputCanvas.height = height;
+                  const outputCtx = outputCanvas.getContext('2d');
+                  const imageData = outputCtx.createImageData(width, height);
+                  
+                  //Some WebGL textures are flipped vertically; flip the pixel data
+                  for (let y = 0; y < height; y++) {
+                      for (let x = 0; x < width; x++) {
+                          const destIdx = (y * width + x) * 4;
+                          const srcY = height - y - 1; // flip vertically
+                          const srcIdx = (srcY * width + x) * 4;
+                          imageData.data[destIdx]     = pixels[srcIdx];
+                          imageData.data[destIdx + 1] = pixels[srcIdx + 1];
+                          imageData.data[destIdx + 2] = pixels[srcIdx + 2];
+                          imageData.data[destIdx + 3] = pixels[srcIdx + 3];
+                      }
+                  }
+                  
+                  outputCtx.putImageData(imageData, 0, 0);
+                  const imageDataURL = outputCanvas.toDataURL('image/png');
+                  console.log(imageDataURL);
+              } else {
+                  console.error("Framebuffer is not complete");
+              }
+              gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+              gl.deleteFramebuffer(fb);
+	
 							
-							// Perform rendering or processing with the texture here
 						} else {
 							console.warn("No camera texture available for this view.");
 						}
@@ -453,8 +490,10 @@ void main()
 
 	  XRManager.prototype.requestCameraFrame = function () {
 		console.log("Requesting camera frame");
-		if (this.xrSession && this.xrSession.isInSession && this.xrSession.isAR) {
-			//TODO
+		if (this.xrSession && this.xrSession.isInSession && this.xrSession.isAR && this.xrSession.localRefSpace) {
+			
+      accessRawCameraTexture(this.xrSession, this.xrSession.localRefSpace);
+		
 		}
 	  }
 
