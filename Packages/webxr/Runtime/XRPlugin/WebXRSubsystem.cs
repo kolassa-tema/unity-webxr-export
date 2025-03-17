@@ -284,7 +284,10 @@ namespace WebXR
 	  [DllImport("__Internal")]
 	  public static extern void RequestCameraFrame();
 
-      [DllImport("__Internal")]
+    [DllImport("__Internal")]
+    public static extern void SetCameraTexture(int textureId);
+
+    [DllImport("__Internal")]
       public static extern void ControllerPulse(int controller, float intensity, float duration);
 
       [DllImport("__Internal")]
@@ -528,8 +531,17 @@ namespace WebXR
       }
 #endif
 	}
+        public void SetCameraTexture(int textureId)
+        {
+#if UNITY_WEBGL
+            if (xrState == WebXRState.AR)
+            {
+                Native.SetCameraTexture(textureId);
+            }
+#endif
+        }
 
-    public void HapticPulse(WebXRControllerHand hand, float intensity, float duration)
+        public void HapticPulse(WebXRControllerHand hand, float intensity, float duration)
     {
 #if UNITY_WEBGL
       Native.ControllerPulse((int)hand, intensity, duration);

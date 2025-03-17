@@ -59,6 +59,10 @@ var LibraryWebXR = {
 
   RequestCameraFrame: function() {
 	Module.WebXR.requestCameraFrame();
+  },
+
+  SetCameraTexture: function(textureId) {
+    Module.WebXR.SetCameraTexture(textureId);
   }
 }
 

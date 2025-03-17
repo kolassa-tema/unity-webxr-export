@@ -143,7 +143,12 @@ namespace WebXR
 		subsystem?.RequestCameraFrame();
 	}
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    public void SetCameraTexture(int textureId)
+    {
+        subsystem?.SetCameraTexture(textureId);
+    }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void TryAutoLoad()
     {
       WebXRSettings settings = WebXRSettings.GetSettings();
