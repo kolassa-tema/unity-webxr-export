@@ -477,12 +477,10 @@ void main()
 			console.error("Canvas element not found.");
 			return;
 		}
-
-        const blitShader = xrManager.blitShader
 	
 		// Get the WebGL rendering context from the canvas
 		const gl = canvas.getContext("webgl2", { xrCompatible: true });
-	
+
 		// Create the XRWebGLBinding instance
 		const xrWebGLBinding = new XRWebGLBinding(xrSession, gl);
 		// Set up the base layer for the XRSession
@@ -519,26 +517,14 @@ void main()
 							// gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
 							// gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, targetTexture, 0);
                             //
-                          if (gl.checkFramebufferStatus(gl.DRAW_FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
-                              console.log("Framebuffer is complete");
-							//  //  messes up scaling 	gl.viewport(0, 0, width, height);
-							// 	gl.useProgram(blitShader);
-                            //     gl.activeTexture(gl.TEXTURE0);
-                            //     gl.bindTexture(gl.TEXTURE_2D, newcamtex);
-                            //
-                            //   // Pass the texture unit index to the shader sampler uniform.
-                            //   const samplerLocation = gl.getUniformLocation(blitShader, "u_texture");
-                            //   gl.uniform1i(samplerLocation, 0);
-                            //
-                            //   // Draw full-screen quad.
-                            //   // (Assumes that vertex buffer/array is already in place.)
-                            //   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-                            //
-                            //
+
+
+                          if (gl.checkFramebufferStatus(gl.DRAW_FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE &&
+                                gl.checkFramebufferStatus(gl.READ_FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
+                              //console.log("Framebuffers are complete");
 							 } else {
 							 	console.error("Framebuffer is not complete");
 							 }
-							// gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 							gl.deleteFramebuffer(fbSource);
                             gl.deleteFramebuffer(fbTarget);
 	
@@ -556,11 +542,8 @@ void main()
 		});
 	}
 
-    function outputImageAsBase64(gl,image,width,height) {
-
-      const fb = gl.createFramebuffer();
+    function outputImageAsBase64(gl,fb,width,height) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, image, 0);
       const pixels = new Uint8Array(width * height * 4);
 
         gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
@@ -591,10 +574,10 @@ void main()
     }
 
 	  XRManager.prototype.requestCameraFrame = function () {
-		console.log("Requesting camera frame");
+
 		if (this.xrSession && this.xrSession.isInSession && this.xrSession.isAR
 			&& this.xrSession.localRefSpace && this.cameraTexture && this.blitShader) {
-
+			console.log("Requesting camera frame");
 		  accessRawCameraTexture(this,this.xrSession, this.xrSession.localRefSpace,this.cameraTexture);
 		
 		}
