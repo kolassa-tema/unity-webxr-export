@@ -502,7 +502,7 @@ void main()
 
 							const width = camera.width; 
 							const height = camera.height;
-                            console.log("Camera texture obtained:", cameraTexture, " width: ", width, " height: ", height, "");
+                            //console.log("Camera texture obtained:", cameraTexture, " width: ", width, " height: ", height, "");
 
 
 							const fbSource = gl.createFramebuffer();
@@ -577,7 +577,7 @@ void main()
 
 		if (this.xrSession && this.xrSession.isInSession && this.xrSession.isAR
 			&& this.xrSession.localRefSpace && this.cameraTexture && this.blitShader) {
-			console.log("Requesting camera frame");
+			//console.log("Requesting camera frame");
 		  accessRawCameraTexture(this,this.xrSession, this.xrSession.localRefSpace,this.cameraTexture);
 		
 		}
