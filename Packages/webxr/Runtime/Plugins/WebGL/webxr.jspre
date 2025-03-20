@@ -468,7 +468,26 @@ void main()
 		Module.WebXR.requestCameraFrame = onRequestCameraFrame;
 		Module.WebXR.SetCameraTexture = onSetCameraTexture;
 	  }
-	
+
+	const getCameraIntrinsics = (projectionMatrix, width,height) => {
+        const p = projectionMatrix;
+
+        // Principal point in pixels (typically at or near the center of the viewport)
+        const u0 = ((1 - p[8]) * width) / 2 ;
+        const v0 = ((1 - p[9]) * height) / 2 ;
+
+        // Focal lengths in pixels (these are equal for square pixels)
+        const ax = (width / 2) * p[0];
+        const ay = (height / 2) * p[5];
+
+        return {
+            fx: ax,
+            fy: ay,
+            px: u0,
+            py: v0,
+        };
+    }
+
 
 	  async function accessRawCameraTexture(xrManager, xrSession, referenceSpace, targetTexture) {
 		// Get the canvas element by type (assumes it already exists in the DOM)
@@ -490,10 +509,18 @@ void main()
 	
 		xrSession.requestAnimationFrame((time, xrFrame) => {
 			const pose = xrFrame.getViewerPose(referenceSpace);
-	
+
 			if (pose) {
 				for (const view of pose.views) {
 					const camera = view.camera;
+					console.log("Camera: ", camera);
+					navigator.dbView=view;
+					var viewport = xrSession.renderState.baseLayer.getViewport(view);
+					const proj = view.projectionMatrix;
+					const intrinsics = getCameraIntrinsics(proj, camera.width, camera.height);
+					console.log("Camera intrinsics: ", intrinsics);
+
+
 	
 					if (camera) {
 						// Retrieve the raw camera texture
@@ -502,7 +529,7 @@ void main()
 
 							const width = camera.width; 
 							const height = camera.height;
-                            //console.log("Camera texture obtained:", cameraTexture, " width: ", width, " height: ", height, "");
+                            console.log("Camera texture obtained:", cameraTexture, " width: ", width, " height: ", height, "");
 
 
 							const fbSource = gl.createFramebuffer();
