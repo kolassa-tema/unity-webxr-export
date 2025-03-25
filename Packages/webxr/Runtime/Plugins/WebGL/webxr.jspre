@@ -150,6 +150,9 @@ void main()
 		Module.dynCall_viffffffff = Module.dynCall_viffffffff || function (cb, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
 		  return getWasmTableEntry(cb)(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 		};
+		Module.dynCall_viiffff = Module.dynCall_viiffff || function (cb, arg1, arg2, arg3, arg4, arg5, arg6){
+			return getWasmTableEntry(cb)(arg1, arg2, arg3, arg4, arg5, arg6);
+		};
 	}
 
 
@@ -496,6 +499,7 @@ void main()
 			console.error("Canvas element not found.");
 			return;
 		}
+		//printError("getting camera texture");
 	
 		// Get the WebGL rendering context from the canvas
 		const gl = canvas.getContext("webgl2", { xrCompatible: true });
@@ -506,19 +510,19 @@ void main()
 		// xrSession.updateRenderState({
 		// 	baseLayer: new XRWebGLLayer(xrSession, gl),
 		// });
-	
+		  //printError("requesting frame");
 		xrSession.requestAnimationFrame((time, xrFrame) => {
 			const pose = xrFrame.getViewerPose(referenceSpace);
-
 			if (pose) {
+				//printError("got pose");
 				for (const view of pose.views) {
 					const camera = view.camera;
+					//printError("got camera, w:"+camera.width+" h:"+camera.height);
 					console.log("Camera: ", camera);
 					navigator.dbView=view;
-					var viewport = xrSession.renderState.baseLayer.getViewport(view);
 					const proj = view.projectionMatrix;
 					const intrinsics = getCameraIntrinsics(proj, camera.width, camera.height);
-					console.log("Camera intrinsics: ", intrinsics);
+					//printError("Camera intrinsics: ", intrinsics);
 
 
 	
@@ -531,31 +535,34 @@ void main()
 							const height = camera.height;
                             console.log("Camera texture obtained:", cameraTexture, " width: ", width, " height: ", height, "");
 
+							if(cameraTexture) {
 
-							const fbSource = gl.createFramebuffer();
-                            gl.bindFramebuffer(gl.READ_FRAMEBUFFER, fbSource);
-                            gl.framebufferTexture2D(gl.READ_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, cameraTexture, 0);
+								const fbSource = gl.createFramebuffer();
+								gl.bindFramebuffer(gl.READ_FRAMEBUFFER, fbSource);
+								gl.framebufferTexture2D(gl.READ_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, cameraTexture, 0);
 
-                            const fbTarget = gl.createFramebuffer();
-                            gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, fbTarget);
-                            gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, targetTexture, 0);
+								const fbTarget = gl.createFramebuffer();
+								gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, fbTarget);
+								gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, targetTexture, 0);
 
-                            gl.blitFramebuffer(0, 0, width, height, 0, 0, width, height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
-							// gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-							// gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, targetTexture, 0);
-                            //
+								gl.blitFramebuffer(0, 0, width, height, 0, 0, width, height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+								// gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+								// gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, targetTexture, 0);
+								//
 
 
-                          if (gl.checkFramebufferStatus(gl.DRAW_FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE &&
-                                gl.checkFramebufferStatus(gl.READ_FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
-                              //console.log("Framebuffers are complete");
-							 } else {
-							 	console.error("Framebuffer is not complete");
-							 }
-							gl.deleteFramebuffer(fbSource);
-                            gl.deleteFramebuffer(fbTarget);
-	
-							
+								if (gl.checkFramebufferStatus(gl.DRAW_FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE &&
+									gl.checkFramebufferStatus(gl.READ_FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
+									//console.log("Framebuffers are complete");
+								} else {
+									console.error("Framebuffer is not complete");
+								}
+								gl.deleteFramebuffer(fbSource);
+								gl.deleteFramebuffer(fbTarget);
+							}
+
+							Module.WebXR.OnCameraFrame(false, "",intrinsics.fx,intrinsics.fy,width,height);
+
 						} else {
 							console.warn("No camera texture available for this view.");
 						}
@@ -567,6 +574,31 @@ void main()
 				console.warn("No viewer pose available.");
 			}
 		});
+	}
+
+	function getVideoFrameIOS(xrSession){
+		//printError("requesting frame");
+		xrSession.requestAnimationFrame((time, xrFrame) => {
+			//printError("got frame");
+			const pose = xrFrame.getViewerPose(xrSession.localRefSpace);
+			if (pose) {
+				//printError("got pose " );
+				const view = pose.views[0]
+				const proj = view.projectionMatrix;
+				//printError("Got projection matrix ");
+				VLaunch.requestVideoFrame((data) =>{
+					var keys = Object.keys(data);
+					//printError("Got data: "+keys);
+					const intrinsics = getCameraIntrinsics(proj,data.width,data.height);
+
+					Module.WebXR.OnCameraFrame(true, data.data, intrinsics.fx, intrinsics.fy,data.width,data.height);
+				});
+
+			}
+
+		});
+		//printError("Getting video frame on ios");
+
 	}
 
     function outputImageAsBase64(gl,fb,width,height) {
@@ -600,13 +632,28 @@ void main()
         console.log(imageDataURL);
     }
 
-	  XRManager.prototype.requestCameraFrame = function () {
+	function printError(error) {
+		var element = document.getElementById('error-message')
+		element.style.display = 'block';
+		element.innerHTML = error;
+	}
 
+
+	  XRManager.prototype.requestCameraFrame = function () {
 		if (this.xrSession && this.xrSession.isInSession && this.xrSession.isAR
-			&& this.xrSession.localRefSpace && this.cameraTexture && this.blitShader) {
-			//console.log("Requesting camera frame");
-		  accessRawCameraTexture(this,this.xrSession, this.xrSession.localRefSpace,this.cameraTexture);
-		
+			&& this.xrSession.localRefSpace) {
+
+			console.log("Requesting camera frame");
+			if(VLaunch.platform == "android"){
+				accessRawCameraTexture(this,this.xrSession, this.xrSession.localRefSpace,this.cameraTexture);
+			}else if(VLaunch.platform == "ios"){
+				getVideoFrameIOS(this.xrSession);
+			}else{
+
+				printError("Platform "+VLaunch.platform+" not supported");
+			}
+
+
 		}
 	  }
 
@@ -1510,4 +1557,12 @@ Module['WebXR'].OnInputProfiles = function (input_profiles) {
   stringToUTF8(input_profiles, strBuffer, strBufferSize);
   Module.dynCall_vi(Module.WebXR.onInputProfilesPtr, strBuffer);
   _free(strBuffer);
+}
+
+Module['WebXR'].OnCameraFrame = function (onCpu, data, fx,fy,px,py){
+	var strBufferSize = lengthBytesUTF8(data) + 1;
+	var strBuffer = _malloc(strBufferSize);
+	stringToUTF8(data, strBuffer, strBufferSize);
+	Module.dynCall_viiffff(Module.WebXR.onCameraFramePtr, onCpu, strBuffer,fx,fy,px,py);
+	_free(strBuffer);
 }

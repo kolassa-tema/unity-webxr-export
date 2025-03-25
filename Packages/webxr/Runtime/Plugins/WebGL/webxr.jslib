@@ -7,13 +7,14 @@ var LibraryWebXR = {
 
   SetWebXREvents: function(onStartARPtr,
       onStartVRPtr, onVisibilityChangePtr, onEndXRPtr,
-      onXRCapabilitiesPtr, onInputProfilesPtr) {
+      onXRCapabilitiesPtr, onInputProfilesPtr, onCameraFramePtr) {
     Module.WebXR.onStartARPtr = onStartARPtr;
     Module.WebXR.onStartVRPtr = onStartVRPtr;
     Module.WebXR.onVisibilityChangePtr = onVisibilityChangePtr;
     Module.WebXR.onEndXRPtr = onEndXRPtr;
     Module.WebXR.onXRCapabilitiesPtr = onXRCapabilitiesPtr;
     Module.WebXR.onInputProfilesPtr = onInputProfilesPtr;
+    Module.WebXR.onCameraFramePtr = onCameraFramePtr;
   },
 
   InitXRSharedArray: function(byteOffset) {
