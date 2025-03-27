@@ -1,3 +1,4 @@
+
 Module['WebXR'] = Module['WebXR'] || {};
 
 const blitShaderVertex = `#version 300 es
@@ -522,8 +523,7 @@ void main()
 					navigator.dbView=view;
 					const proj = view.projectionMatrix;
 					const intrinsics = getCameraIntrinsics(proj, camera.width, camera.height);
-					//printError("Camera intrinsics: ", intrinsics);
-
+					console.log("Camera intrinsics: ", intrinsics);
 
 	
 					if (camera) {
@@ -553,7 +553,7 @@ void main()
 
 								if (gl.checkFramebufferStatus(gl.DRAW_FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE &&
 									gl.checkFramebufferStatus(gl.READ_FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
-									//console.log("Framebuffers are complete");
+									console.log("Framebuffers are complete");
 								} else {
 									console.error("Framebuffer is not complete");
 								}
@@ -1438,6 +1438,18 @@ void main()
 		  }
 		  for (var i = 0; i < pose.views.length; i++) {
 			var view = pose.views[i];
+			  console.log("[init] got view");
+			  var projectionMat= view.projectionMatrix
+			  unityInstance.SendMessage("CameraAccess", "submitProjectionP0" ,projectionMat[0]);
+			  unityInstance.SendMessage("CameraAccess", "submitProjectionP5" ,projectionMat[5]);
+
+			const camera = view.camera;
+			if(camera){
+				console.log("[init] got camera")
+				unityInstance.SendMessage("CameraAccess", "submitWidth" ,camera.width);
+				unityInstance.SendMessage("CameraAccess", "submitHeight" ,camera.height);
+			}
+
 			var viewport = session.renderState.baseLayer.getViewport(view);
 			if (view.eye === 'left') {
 			  if (viewport) {
@@ -1560,11 +1572,13 @@ Module['WebXR'].OnInputProfiles = function (input_profiles) {
 }
 
 Module['WebXR'].OnCameraFrame = function (onCpu, data, fx,fy,px,py){
-
-		var strBufferSize = lengthBytesUTF8(data) + 1;
-		var strBuffer = _malloc(strBufferSize);
-		stringToUTF8(data, strBuffer, strBufferSize);
-		Module.dynCall_viiffff(Module.WebXR.onCameraFramePtr, onCpu, strBuffer,fx,fy,px,py);
-		_free(strBuffer);
+		unityInstance.SendMessage("CameraAccess", "submitImage" ,data);
+		//unityInstance.SendMessage("CameraAccess")
+		// var strBufferSize = lengthBytesUTF8(data) + 1;
+		// var strBuffer = _malloc(strBufferSize);
+		// stringToUTF8(data, strBuffer, strBufferSize);
+		//{{{ makeDynCall('viiffff', 'onCameraFrame') }}}(onCpu, strBuffer,fx,fy,px,py);
+		//Module.dynCall_viiffff(Module.WebXR.onCameraFramePtr, onCpu, strBuffer,fx,fy,px,py);
+		// _free(strBuffer);
 
 }
