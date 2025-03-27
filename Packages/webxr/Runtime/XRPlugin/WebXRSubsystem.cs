@@ -249,7 +249,7 @@ namespace WebXR
     private void InternalStart()
     {
 #if UNITY_WEBGL
-      Native.SetWebXREvents(OnStartAR, OnStartVR, UpdateVisibilityState, OnEndXR, OnXRCapabilities, OnInputProfiles);
+      Native.SetWebXREvents(OnStartAR, OnStartVR, UpdateVisibilityState, OnEndXR, OnXRCapabilities, OnInputProfiles, OnCameraFrame);
       Native.InitControllersArray(controllersArray);
       Native.InitHandsArray(handsArray);
       Native.InitViewerHitTestPoseArray(viewerHitTestPoseArray);
@@ -299,7 +299,8 @@ namespace WebXR
           VisibilityChangeEvent on_visibility_change,
           EndXREvent on_end_xr,
           XRCapabilitiesEvent on_xr_capabilities,
-          InputProfilesEvent on_input_profiles);
+          InputProfilesEvent on_input_profiles,
+          CameraFrameReceived on_camera_frame);
     }
 #endif
 
@@ -319,6 +320,9 @@ namespace WebXR
     public delegate void XRChange(WebXRState state, int viewsCount, Rect leftRect, Rect rightRect);
 
     internal static event XRChange OnXRChange;
+
+    public delegate void CameraFrameReceived(bool onCpu, string data, float fx, float fy, float px, float py);
+    internal static event CameraFrameReceived OnCameraFrameReceived;
 
     public delegate void VisibilityChange(WebXRVisibilityState visibilityState);
 
@@ -346,13 +350,10 @@ namespace WebXR
 
     internal static event HitTestUpdate OnViewerHitTestUpdate;
 
-	public delegate void CameraFrameReceived(Texture2D webcamData);
-
-	internal static event CameraFrameReceived OnCameraFrameReceived;
 
     internal delegate void StartXREvent(int viewsCount,
-        float left_x, float left_y, float left_w, float left_h,
-        float right_x, float right_y, float right_w, float right_h);
+    float left_x, float left_y, float left_w, float left_h,
+    float right_x, float right_y, float right_w, float right_h);
 
     internal delegate void VisibilityChangeEvent(int visibilityState);
 
@@ -362,8 +363,9 @@ namespace WebXR
 
     internal delegate void InputProfilesEvent(string json);
 
-    // Cameras calculations helpers
-    private Matrix4x4 leftProjectionMatrix = new Matrix4x4();
+
+        // Cameras calculations helpers
+        private Matrix4x4 leftProjectionMatrix = new Matrix4x4();
     private Matrix4x4 rightProjectionMatrix = new Matrix4x4();
     private Vector3 leftPosition = new Vector3();
     private Vector3 rightPosition = new Vector3();
@@ -482,7 +484,14 @@ namespace WebXR
       Instance.setXrState(WebXRState.NORMAL, 1, new Rect(), new Rect());
     }
 
-    public void ToggleAR()
+    [MonoPInvokeCallback(typeof(CameraFrameReceived))]
+    public static void OnCameraFrame(bool onCpu, string data, float fx, float fy, float px, float py)
+    {
+        //string dataCopy = string.Copy( data );
+        OnCameraFrameReceived?.Invoke(onCpu, data, fx, fy, px, py);
+    }
+
+        public void ToggleAR()
     {
 #if UNITY_WEBGL
       if (capabilities.canPresentAR)

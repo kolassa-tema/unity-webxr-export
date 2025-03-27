@@ -1560,9 +1560,11 @@ Module['WebXR'].OnInputProfiles = function (input_profiles) {
 }
 
 Module['WebXR'].OnCameraFrame = function (onCpu, data, fx,fy,px,py){
-	var strBufferSize = lengthBytesUTF8(data) + 1;
-	var strBuffer = _malloc(strBufferSize);
-	stringToUTF8(data, strBuffer, strBufferSize);
-	Module.dynCall_viiffff(Module.WebXR.onCameraFramePtr, onCpu, strBuffer,fx,fy,px,py);
-	_free(strBuffer);
+
+		var strBufferSize = lengthBytesUTF8(data) + 1;
+		var strBuffer = _malloc(strBufferSize);
+		stringToUTF8(data, strBuffer, strBufferSize);
+		Module.dynCall_viiffff(Module.WebXR.onCameraFramePtr, onCpu, strBuffer,fx,fy,px,py);
+		_free(strBuffer);
+
 }
