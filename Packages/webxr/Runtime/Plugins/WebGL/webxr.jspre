@@ -493,6 +493,46 @@ void main()
     }
 
 
+	async function performMultisetLogin(clientId, secret){
+		const authorization = "Basic "+clientId + ":" + secret;
+		const response = await fetch('https://api.multiset.ai/v1/m2m/token', {
+			method: 'POST',
+			headers: {
+				"Authorization": authorization,
+				"Username": clientId,
+				"Password": secret,
+				"Content-Type": "text/plain"
+			},
+		});
+
+		const data = await response.json();
+		return data.token;
+	}
+
+	async function queryMultiset(token,image,mapcode,intrinsics,width,height) {
+		const response = await fetch('https://api.mulitset.ai/v1/vps/map/query', {
+			method: 'POST',
+			headers: {
+				"Authorization": "Bearer JWT",
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify({
+				"mapCode": mapcode,
+				"cameraIntrinsics": intrinsics,
+				"isRightHanded": false,
+				"resolution": {
+					"width": width,
+					"height": height
+				},
+				"queryImage": image
+			})
+		});
+
+		const data = await response.json();
+		return data;
+	}
+
+
 	  async function accessRawCameraTexture(xrManager, xrSession, referenceSpace, targetTexture) {
 		// Get the canvas element by type (assumes it already exists in the DOM)
 		const canvas = document.querySelector("canvas");
@@ -524,6 +564,7 @@ void main()
 					const proj = view.projectionMatrix;
 					const intrinsics = getCameraIntrinsics(proj, camera.width, camera.height);
 					console.log("Camera intrinsics: ", intrinsics);
+					console.log(proj);
 
 	
 					if (camera) {
